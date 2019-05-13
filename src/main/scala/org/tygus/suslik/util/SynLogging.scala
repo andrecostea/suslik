@@ -70,8 +70,6 @@ class SynStats {
   private var recalled_results_positive: Int = 0
   private var recalled_results_negative: Int = 0
 
-  // doesn't have to be a tree... can just be a list
-  //private var inference_tree : mutable.TreeMap[Int, String] = mutable.TreeMap.empty[Int, String]
   private var inference_tree : List[String] = List.empty[String]
 
   def bumpUpBacktracing() {
@@ -101,7 +99,6 @@ class SynStats {
   }
 
   def addRuleToInferenceTree(message: String): Unit = {
-    //inference_tree += (key -> message)
     inference_tree = message :: inference_tree
   }
 
@@ -111,15 +108,9 @@ class SynStats {
   }
 
   def createStringInferenceTree() : String = {
-  //todo need to add indentation
-    //for ((k,v) <- inference_tree) Console.println("key: %s, value: %s\n", k, v)
-
     inference_tree.foldRight("")((acc, entry) => {
-      //acc + entry._2
       acc + entry
     })
-
-    //"heyyy"
   }
 
   def numBack: Int = backtracking
