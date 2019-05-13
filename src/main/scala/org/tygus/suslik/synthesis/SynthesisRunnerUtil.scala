@@ -101,6 +101,7 @@ trait SynthesisRunnerUtil {
           testPrintln(s"Number of saved positive results: ${stats.numSavedResultsPositive}")
           testPrintln(s"Number of recalled negative results: ${stats.numRecalledResultsNegative}")
           testPrintln(s"Number of recalled positive results: ${stats.numRecalledResultsPositive}")
+          testPrintln(s"Canonical inference tree built:\n ${stats.createStringInferenceTree()}")
           testPrintln(result)
           testPrintln("-----------------------------------------------------")
         } else {

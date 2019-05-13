@@ -56,6 +56,7 @@ trait Synthesis extends SepLogicUtils {
 
   }
 
+
   private def synthesize(goal: Goal, depth: Int) // todo: add goal normalization
                         (stats: SynStats,
                          rules: List[SynthesisRule])
@@ -73,6 +74,7 @@ trait Synthesis extends SepLogicUtils {
     if (config.printEnv) {
       printLog(List((s"${goal.env.pp}", Console.MAGENTA)))
     }
+
     printLog(List((s"${goal.pp}", Console.BLUE)))
 
     val currentTime = System.currentTimeMillis()
@@ -92,13 +94,17 @@ trait Synthesis extends SepLogicUtils {
         // Try alternative sub-derivations after applying `r`
         def tryAlternatives(alts: Seq[Subderivation], altIndex: Int): Option[Statement] = alts match {
           case Seq(a, as@_*) =>
+             // todo where do I need to increment this
             if (altIndex > 0) printLog(List((s"${r.toString} Trying alternative sub-derivation ${altIndex + 1}:", MAGENTA)))
+
             solveSubgoals(a) match {
               case Some(Magic) =>
                 stats.bumpUpBacktracing()
                 tryAlternatives(as, altIndex + 1) // This alternative is inconsistent: try other alternatives
               case Some(res) =>
                 stats.bumpUpLastingSuccess()
+                val goalStr = goal.pp.replaceAll("\n", s"\n$BLACK$getIndent")
+                stats.addRuleToInferenceTree(s"$BLACK$getIndent$goalStr\n$BLACK$getIndent${r.toString}\n")
                 Some(res) // This alternative succeeded
               case None =>
                 stats.bumpUpBacktracing()
@@ -191,6 +197,7 @@ trait Synthesis extends SepLogicUtils {
 
         if (subderivations.isEmpty) {
           // Rule not applicable: try the rest
+          stats.removeRuleFromInferenceTree()
           printLog(List((s"$goalStr${RED}FAIL", BLACK)), isFail = true)
           tryRules(rs)
         } else {
@@ -198,7 +205,6 @@ trait Synthesis extends SepLogicUtils {
           val subSizes = subderivations.map(s => s"${s.subgoals.size} sub-goal(s)").mkString(", ")
           val succ = s"SUCCESS at depth $ind, ${subderivations.size} alternative(s) [$subSizes]"
           printLog(List((s"$goalStr$GREEN$succ", BLACK)))
-          stats.bumpUpSuccessfulRuleApp()
           if (subderivations.size > 1) {
             printLog(List((s"Trying alternative sub-derivation 1:", CYAN)))
           }
@@ -211,6 +217,8 @@ trait Synthesis extends SepLogicUtils {
 
   private def getIndent(implicit i: Int): String = if (i <= 0) "" else "|  " * i
 
+  // TODO collect the successful ones
+  // TODO when we encounter a failure, jump back/teleport to last success... somehow?
   private def printLog(sc: List[(String, String)], isFail: Boolean = false)
                       (implicit i: Int, config: SynConfig): Unit = {
     if (config.printDerivations) {
