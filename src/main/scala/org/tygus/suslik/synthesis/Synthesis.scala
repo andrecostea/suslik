@@ -103,8 +103,7 @@ trait Synthesis extends SepLogicUtils {
                 tryAlternatives(as, altIndex + 1) // This alternative is inconsistent: try other alternatives
               case Some(res) =>
                 stats.bumpUpLastingSuccess()
-                val goalStr = goal.pp.replaceAll("\n", s"\n$BLACK$getIndent")
-                stats.addRuleToInferenceTree(s"$BLACK$getIndent$goalStr\n$BLACK$getIndent${r.toString}\n")
+                addRuleToInferenceTree(r, goal, stats)
                 Some(res) // This alternative succeeded
               case None =>
                 stats.bumpUpBacktracing()
@@ -213,6 +212,11 @@ trait Synthesis extends SepLogicUtils {
     }
 
     tryRules(rules)
+  }
+
+  private def addRuleToInferenceTree(r : SynthesisRule, goal : Goal, stats : SynStats)(implicit i : Int): Unit = {
+    val goalStr = goal.pp.replaceAll("\n", s"\n$BLACK$getIndent")
+    stats.addRuleToInferenceTree(s"$BLACK$getIndent$goalStr\n$BLACK$getIndent${r.toString}\n")
   }
 
   private def getIndent(implicit i: Int): String = if (i <= 0) "" else "|  " * i
