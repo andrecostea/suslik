@@ -1,0 +1,10 @@
+
+
+predicate skiplist(int val, int height, loc e, loc f, set S) {
+|  e == f        => { true ; emp }
+|  height == 0   => { true ; emp }
+|  not (e == f)  => { height != 0 /\ S i= {val} ++ sl ++ sn /\ value <= vall /\ value <= valn;
+                      [e, 4] ** e :-> val ** (e + 1) :-> height ** e+2 :-> low ** e+3 :-> nxt
+                       ** skiplist(vall, height-1, low, nxt, sl)
+                       ** skiplist(valn, height, nxt, f, sl }
+}
