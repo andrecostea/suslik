@@ -4,6 +4,7 @@ import org.tygus.suslik
 import org.tygus.suslik.language
 import org.tygus.suslik.language.Expressions._
 import org.tygus.suslik.language._
+import org.tygus.suslik.logic.MTag.polyAnnName
 import org.tygus.suslik.synthesis.SynthesisException
 import org.tygus.suslik.synthesis.rules.LogicalRules.findMatchingHeaplets
 
@@ -38,6 +39,8 @@ case object Imm extends MTag {
 
   override def subst(substitution: Substitution): MTag = Imm
 }
+
+// TODO Andreea: Are both Imm(tag) and ImmVar(var) supposed to abstract the parameterized immutability annotation? e.g. I[a].
 // TODO this OOP relation is weird
 case class Imm(tag: MTag) extends MTag {
   override def pp(): String = {
@@ -62,8 +65,18 @@ case class U(tag : Integer) extends MTag {
   override def subst(substitution: Substitution): MTag = U(tag)
 }
 
+/* Polymorphic annotation */
+case class PolyImm(tag: Var) extends MTag {
+  override def pp(): String = {
+    s"@${tag.pp}"
+  }
+
+  override def subst(substitution: Substitution): MTag = substitution.mutMapping.getOrElse(tag, PolyImm(tag))
+}
 
 object MTag {
+
+  def polyAnnName: String = "ann"
 
   def checkLists(s1 : Option[List[MTag]], s2: Option[List[MTag]]) : Boolean = (s1, s2) match {
     case (Some(a), Some(b)) => a.zip(b).forall{ case (x: MTag, y: MTag) => MTag.pre(x,y)}
@@ -86,6 +99,41 @@ object MTag {
     case (_, Imm(x)) => true
     case (x, y) if x == y => true
     case _ => false
+  }
+
+  /* the equality of immutability annotations */
+  def eq(t1: MTag, t2: MTag): Boolean = (t1, t2) match {
+    case (Mut, Mut)               => true
+    case (Imm, Imm)               => true
+    case (Imm(ann1), Imm(ann2))   => eq(ann1,ann2)
+    case (ImmVar(x), ImmVar(y))   => x == y
+    case (PolyImm(x), PolyImm(y)) => x == y
+    case (x, y) if x == y         => true
+    case _                        => false
+  }
+
+  /* the subsumption of immutability annotations */
+  def sub(t1: MTag, t2: MTag): Boolean = (t1, t2) match {
+    case (Mut, _) => true
+    case (_, Imm) => true
+    case (x, y)   => eq(x,y)
+    case _        => false
+  }
+
+  /* below assumes that Imm(_) and ImmVar are semantically the same, namely the placeholder for the borrowed permission */
+  /* returns the obligation => @I@a ==> @a */
+  def eraseObligation(ann: MTag): MTag = ann match {
+    case Imm(ann)    => ann
+    case ImmVar(v)   => PolyImm(v)
+    case _           => ann
+  }
+
+  /* erases all forms of immutable annotations => @I@a ==> @a', @I ==> @a', where a' is a fresh poly annotation */
+  def eraseImm(vars: Set[Var], ann: MTag): MTag = ann match {
+    case Imm        => PolyImm(Var(polyAnnName).refresh(vars))
+    case Imm(_)     => PolyImm(Var(polyAnnName).refresh(vars))
+    case ImmVar(_)  => PolyImm(Var(polyAnnName).refresh(vars))
+    case _          => ann
   }
 
   def demote(have: MTag, need: MTag) : MTag = need match {
