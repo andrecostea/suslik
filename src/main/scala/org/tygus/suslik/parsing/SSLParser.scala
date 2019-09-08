@@ -109,6 +109,7 @@ class SSLParser extends StandardTokenParsers with SepLogicUtils {
       ||| (("I" ~ "@") ~> ident) ^^ (s => ImmVar(Var(s)))
       ||| ("I" ~ "@" ~ "M") ^^ (p => Imm(Mut))
       ||| numericLit ^^ (n => U(Integer.parseInt(n)))
+      ||| ident ^^ (s => PolyImm(Var(s)))
   )
 
   def sigma: Parser[SFormula] = (

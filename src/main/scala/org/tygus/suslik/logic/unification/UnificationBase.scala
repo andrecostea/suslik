@@ -3,7 +3,7 @@ package org.tygus.suslik.logic.unification
 import org.tygus.suslik.language.Expressions.{Expr, Var}
 import org.tygus.suslik.language.{Substitutable, Substitution}
 import org.tygus.suslik.logic.Specifications._
-import org.tygus.suslik.logic.{ImmVar, MTag, PureLogicUtils, SepLogicUtils}
+import org.tygus.suslik.logic.{ImmVar, PolyImm, MTag, PureLogicUtils, SepLogicUtils}
 
 /**
   * Base engine for unification, both for spatial and for pure parts
@@ -162,6 +162,7 @@ trait UnificationBase extends SepLogicUtils with PureLogicUtils {
     if (to == from) None
     else from match {
       case _from@ImmVar(x) if !taken.contains(x) => Some(Substitution(Map.empty, Map(x -> to)))
+      case _from@PolyImm(x) if !taken.contains(x) => Some(Substitution(Map.empty, Map(x -> to)))
       case _ => None
     }
   }

@@ -37,7 +37,7 @@ object SpatialUnification extends UnificationBase {
     (target, source) match {
       case (PointsTo(x@Var(_), o1, y, m1), PointsTo(a@Var(_), o2, b, m2)) =>
         if (o1 != o2 ||
-          (!pre(m1, m2) && !MTag.substitutable(m1, m2))
+          (!sub(m1, m2) && !MTag.substitutable(m1, m2))
         ) Nil else {
           assert(nonFreeInSource.contains(x))
           assert(y.vars.forall(nonFreeInSource.contains))

@@ -68,7 +68,7 @@ case class U(tag : Integer) extends MTag {
 /* Polymorphic annotation */
 case class PolyImm(tag: Var) extends MTag {
   override def pp(): String = {
-    s"@${tag.pp}"
+    s"${tag.pp}"
   }
 
   override def subst(substitution: Substitution): MTag = substitution.mutMapping.getOrElse(tag, PolyImm(tag))
@@ -89,6 +89,7 @@ object MTag {
     case _ => false
   }
 
+  // TODO Andreea: replace this method with sub
   // TODO what's the correct way?
   // TODO not clear what is the subsumption relation
   // need to reduce I to A
@@ -142,14 +143,16 @@ object MTag {
   }
   def substitutable(have: MTag, need: MTag): Boolean = (have, need) match {
     case (h, Imm(x: MTag)) => { if (x == h) true else false } // TODO cannot unify...
+    case (h, PolyImm(_)) => true
     case _ => false
   }
 
   def isMutable(tag: MTag): Boolean = tag == Mut
   def isImmutable(tag: MTag): Boolean = tag.isInstanceOf[ImmVar]
   def isNumeric(tag: MTag): Boolean = tag.isInstanceOf[U]
+  def isPolyImm(tag: MTag): Boolean = tag.isInstanceOf[PolyImm]
 
-  def isVariable(tag: MTag): Boolean = tag.isInstanceOf[ImmVar]
+  def isVariable(tag: MTag): Boolean = tag.isInstanceOf[ImmVar] || isPolyImm(tag)
 
 }
 
@@ -163,6 +166,7 @@ sealed abstract class Heaplet extends PrettyPrinting with Substitutable[Heaplet]
   def isMutable: Boolean = MTag.isMutable(mut)
   def isImmutable: Boolean = MTag.isImmutable(mut)
   def isNumeric: Boolean = MTag.isNumeric(mut)
+  def isPolyImm: Boolean = MTag.isPolyImm(mut)
   def withMut(mut : MTag) : Heaplet
 
   def makeUnknown(numberTag : Integer): Heaplet
@@ -227,8 +231,7 @@ case class PointsTo(loc: Expr, offset: Int = 0, value: Expr,
   override def pp: Ident = {
     val head = if (offset <= 0) loc.pp else s"(${loc.pp} + $offset)"
     val overall = s"$head :-> ${value.pp}"
-    if (isImmutable) s"[$overall]@I@${mut.asInstanceOf[ImmVar].tag.name}"
-    else if (isNumeric) s"[$overall]@${mut.asInstanceOf[U].tag}"
+    if(!isMutable) s"[$overall]@${mut.pp}"
     else overall
   }
 
@@ -389,7 +392,7 @@ case class SApp(pred: Ident, args: Seq[PFormula], tag: Option[Int] = Some(0), mu
 
   def mutabilityVars() : Set[Var] =
     submut match {
-      case Some(muts) => muts.foldLeft(Set.empty[Var])((acc: Set[Var], mut: MTag) => mut match { case ImmVar(x) => acc + x case _ => acc })
+      case Some(muts) => muts.foldLeft(Set.empty[Var])((acc: Set[Var], mut: MTag) => mut match { case ImmVar(x) => acc + x  case PolyImm(x) => acc + x case _ => acc })
       case None => Set.empty[Var]
     }
 
@@ -477,7 +480,9 @@ case class SFormula(chunks: List[Heaplet]) extends PrettyPrinting with Substitut
     chunks.foldLeft(Set.empty[Var])((acc: Set[Var], h: Heaplet) =>
       h match {
         case x: SApp => x.mutabilityVars() ++ acc
-        case y => y.mut match { case ImmVar(x) => acc + x case _ => acc }
+        case y => y.mut match { case ImmVar(x) => acc + x
+                                case PolyImm(x) => acc + x
+                                case _ => acc }
       })
   }
 

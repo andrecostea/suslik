@@ -57,9 +57,9 @@ case class FunSpec(name: Ident, rType: SSLType, params: Formals,
     this.copy(pre = newPre, post = newPost)
   }
 
-  def mutabilityTagsAreNotDefined(): Boolean = {
+  def mutabilityTagsAreNotDefined(): Boolean = { false /* poly imm should allow existential imm in post*/
     // there is some tag in the post that is not in the pre
-    (post.mutabilityVariables -- pre.mutabilityVariables).nonEmpty
+    // (post.mutabilityVariables -- pre.mutabilityVariables).nonEmpty
   }
 
 }

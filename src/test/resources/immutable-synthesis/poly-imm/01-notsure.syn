@@ -1,0 +1,19 @@
+Example (3) from the paper (notSure)
+
+###
+{[x :-> a]@I@a ** [y :-> b]@M}
+void notSure (loc x, loc y)
+{[x :-> z]@d ** [y :-> z]@M}
+
+###
+
+Number of backtrackings 2
+Total rule applications: 10
+Maximum worklist size: 4
+Maximum goal depth: 8
+Final size of SMT cache: 4
+
+void notSure (loc x, loc y) {
+  let a2 = *x;
+  *y = a2;
+}
